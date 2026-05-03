@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIML Student Portfolio - 3D Version</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --primary: #00f2ff; /* Cyan */
+            --secondary: #bd00ff; /* Purple */
+            --bg-dark: #050505;
+            --bg-card: rgba(20, 20, 30, 0.7); /* More transparent for background visibility */
+            --text-light: #e0e0e0;
+            --text-gray: #a0a0a0;
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            perspective: 1000px;
+        }
+
+        /* --- 3D ANIMATED BACKGROUND (CANVAS) --- */
+        #canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Sends it to the back */
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+        }
+
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            margin-left: 30px;
+            font-weight: 500;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--secondary);
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* --- SECTIONS COMMON --- */
+        section {
+            padding: 100px 10%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1; /* Ensures content is above canvas */
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 60px;
+            background: linear-gradient(to right, var(--primary), #fff, var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* --- HOME SECTION (3D Structure) --- */
+        .home {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            perspective: 1000px;
+        }
+
+        .home-content {
+            flex: 1;
+            transform-style: preserve-3d;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .home-content h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .home-content h3 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+        }
+
+        .home-content p {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            margin-bottom: 30px;
+            max-width: 500px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+            border-left: 3px solid var(--secondary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: 0 0 20px rgba(189, 0, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            z-index: -1;
+            transition: opacity 0.4s;
+            opacity: 0;
+        }
+
+        .btn:hover::before { opacity: 1; }
+        .btn:hover { transform: scale(1.1); box-shadow: 0 0 30px var(--primary); }
+
+        .social-icons a {
+            font-size: 2rem;
+            color: var(--text-light);
+            margin-right: 20px;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .social-icons a:hover {
+            color: var(--primary);
+            transform: rotateY(360deg) scale(1.2);
+        }
+
+        /* 3D Profile Image Container */
+        .home-img {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .img-box {
+            width: 380px;
+            height: 480px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+        }
+
+        .img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            opacity: 0.9;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Spinning AI Rings Effect around Image */
+        .ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid transparent;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .ring:nth-child(1) { width: 450px; height: 450px; border-top: 2px solid var(--primary); animation: spin 10s linear infinite; }
+        .ring:nth-child(2) { width: 500px; height: 500px; border-bottom: 2px solid var(--secondary); animation: spin 15s linear infinite reverse; }
+
+        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- ABOUT SECTION --- */
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(5px);
+            padding: 30px;
+            text-align: center;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+            transform-style: preserve-3d;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-10px) rotateX(10deg);
+            background: rgba(0, 242, 255, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: block;
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        /* --- SKILLS SECTION --- */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .skill-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skill-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(189, 0, 255, 0.1) 0%, transparent 60%);
+            transform: rotate(45deg);
+            transition: 0.5s;
+            opacity: 0;
+        }
+
+        .skill-card:hover::before { opacity: 1; }
+
+        .skill-card:hover {
+            transform: scale(1.05) translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border-color: var(--secondary);
+        }
+
+        .skill-icon {
+            font-size: 3.5rem;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .read-more-btn {
+            margin-top: 15px;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .read-more-btn:hover {
+            background: var(--primary);
+            color: black;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* --- PROJECTS SECTION --- */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
+        .project-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: var(--transition);
+            transform-style: preserve-3d;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .project-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border-color: var(--primary);
+        }
+
+        .project-img {
+            width: 100%;
+            height: 220px;
+            background-color: #222;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .project-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.5s;
+        }
+
+        .project-card:hover .project-img img { transform: scale(1.1); }
+
+        .project-info {
+            padding: 25px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- CONTACT SECTION --- */
+        .contact-container {
+            display: flex;
+            gap: 50px;
+        }
+
+        .contact-info { flex: 1; }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 15px;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .contact-item:hover {
+            transform: translateX(10px);
+            background: rgba(0, 242, 255, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+        }
+
+        .contact-item i {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-right: 20px;
+        }
+
+        .contact-form {
+            flex: 1;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .input-group { margin-bottom: 20px; }
+
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            color: white;
+            border-radius: 10px;
+            outline: none;
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus, .input-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+            background: rgba(0,0,0,0.8);
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background: #020205;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #333;
+            color: #666;
+            margin-top: 50px;
+        }
+
+        /* --- ANIMATION CLASSES --- */
+        .hidden { opacity: 0; transform: translateY(50px); transition: all 1s; }
+        .show { opacity: 1; transform: translateY(0); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .home { flex-direction: column-reverse; text-align: center; padding-top: 120px; }
+            .home-img { margin-bottom: 50px; }
+            .img-box { width: 300px; height: 380px; }
+            .ring { display: none; } /* Hide rings on mobile for performance */
+            .about-content, .contact-container { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+            .btn-group { justify-content: center; }
+            .section-title { font-size: 2rem; }
+            .home-content h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas3d"></canvas>
+
+    <nav>
+        <div class="logo">AIML.<span style="color:white">Portfolio</span></div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#skills">Skills</a>
+            <a href="#projects">Projects</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+
+    <section id="home" class="home">
+        <div class="home-content">
+            <h1>Hello, It's Me<br><span style="color: var(--primary);">First Name</span></h1>
+            <h3>AIML Engineer & Data Scientist</h3>
+            <p>Exploring the frontiers of Artificial Intelligence. I build neural networks that think and data models that predict the future.</p>
+            
+            <div class="btn-group">
+                <a href="#" class="btn">Download Resume <i class="fas fa-download"></i></a>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-kaggle"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="home-img">
+            <div class="ring"></div>
+            <div class="ring"></div>
+            
+            <div class="img-box" id="tilt-box">
+                <img src="images/WhatsApp Image 2023-10-19 at 12.01.39_5350f608.jpg" alt="Profile">
+            </div>
+        </div>
+    </section>
+
+    <section id="about">
+        <h2 class="section-title">About Me</h2>
+        <div class="about-content hidden">
+            <div style="background: rgba(20,20,30,0.8); padding: 30px; border-radius: 20px; border-left: 5px solid var(--primary);">
+                <p style="line-height: 1.8; font-size: 1.1rem; color: #ccc;">
+                    I am a passionate AIML student focused on <strong>Deep Learning</strong> and <strong>Computer Vision</strong>. I love translating complex data into clear, actionable insights. My goal is to leverage AI to solve real-world problems. I have hands-on experience with Python, TensorFlow, and cloud computing platforms.
+                </p>
+            </div>
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-number">15+</span>
+                    <span>Projects</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">05</span>
+                    <span>Certificates</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">02</span>
+                    <span>Internships</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">300+</span>
+                    <span>Commits</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills">
+        <h2 class="section-title">Technical Skills</h2>
+        <div class="skills-grid hidden">
+            <div class="skill-card">
+                <i class="fas fa-brain skill-icon"></i>
+                <h3>Machine Learning</h3>
+                <p>Supervised & Unsupervised Learning, Scikit-learn, XGBoost</p>
+                <button class="read-more-btn">Read More</button>
+            </div>
+            <div class="skill-card">
+                <i class="fas fa-network-wired skill-icon"></i>
+                <h3>Neural Networks</h3>
+                <p>CNNs, RNNs, Transformers, TensorFlow, PyTorch</p>
+                <button class="read-more-btn">Read More</button>
+            </div>
+            <div class="skill-card">
+                <i class="fas fa-robot skill-icon"></i>
+                <h3>NLP & AI</h3>
+                <p>NLTK, SpaCy, BERT, Chatbots, Generative AI</p>
+                <button class="read-more-btn">Read More</button>
+            </div>
+            <div class="skill-card">
+                <i class="fas fa-chart-line skill-icon"></i>
+                <h3>Data Analysis</h3>
+                <p>Pandas, NumPy, Matplotlib, Seaborn, Tableau</p>
+                <button class="read-more-btn">Read More</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects">
+        <h2 class="section-title">My Projects</h2>
+        <div class="projects-grid hidden">
+            <div class="project-card">
+                <div class="project-img">
+                    <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Traffic Sign Recognition">
+                </div>
+                <div class="project-info">
+                    <h3>Traffic Sign Recognition</h3>
+                    <p style="margin: 10px 0; color: #aaa;">A high-accuracy CNN model for autonomous vehicle systems using the GTSRB dataset.</p>
+                    <button class="btn" style="font-size: 0.8rem; padding: 8px 20px;">View Project</button>
+                </div>
+            </div>
+            
+            <div class="project-card">
+                <div class="project-img">
+                    <img src="https://images.unsplash.com/photo-1611974765270-ca1258634369?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Stock Prediction">
+                </div>
+                <div class="project-info">
+                    <h3>Crypto Price Predictor</h3>
+                    <p style="margin: 10px 0; color: #aaa;">Time-series forecasting using LSTM (Long Short-Term Memory) networks.</p>
+                    <button class="btn" style="font-size: 0.8rem; padding: 8px 20px;">View Project</button>
+                </div>
+            </div>
+            
+            <div class="project-card">
+                <div class="project-img">
+                    <img src="https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Chatbot">
+                </div>
+                <div class="project-info">
+                    <h3>AI Medical Assistant</h3>
+                    <p style="margin: 10px 0; color: #aaa;">A conversational AI bot capable of initial diagnosis suggestions based on symptoms.</p>
+                    <button class="btn" style="font-size: 0.8rem; padding: 8px 20px;">View Project</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2 class="section-title">Get In Touch</h2>
+        <div class="contact-container hidden">
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <div>
+                        <h4>Phone</h4>
+                        <p>+91 7989004552</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <div>
+                        <h4>Email</h4>
+                        <p>chennakesavarao89@gmail.com</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <div>
+                        <h4>Location</h4>
+                        <p>Hyderabad, Telangana, India</p>
+                    </div>
+                </div>
+            </div>
+
+            <form class="contact-form">
+                <div class="input-group">
+                    <input type="text" placeholder="Full Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="email" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <textarea rows="5" placeholder="Your Message / Inquiry"></textarea>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <p>Copyright © 2026 AIML Portfolio. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // --- 3D NEURAL NETWORK BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('canvas3d');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray;
+
+        // Mouse interaction
+        let mouse = {
+            x: null,
+            y: null,
+            radius: (canvas.height/80) * (canvas.width/80)
+        }
+
+        window.addEventListener('mousemove', 
+            function(event) {
+                mouse.x = event.x;
+                mouse.y = event.y;
+            }
+        );
+
+        // Create Particle Class
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) {
+                this.x = x;
+                this.y = y;
+                this.directionX = directionX;
+                this.directionY = directionY;
+                this.size = size;
+                this.color = color;
+            }
+            
+            // Method to draw individual particle
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.fillStyle = '#00f2ff'; // Cyan dots
+                ctx.fill();
+            }
+
+            // Check particle position, check mouse position, move the particle, draw the particle
+            update() {
+                // Check if particle is still within canvas
+                if (this.x > canvas.width || this.x < 0) {
+                    this.directionX = -this.directionX;
+                }
+                if (this.y > canvas.height || this.y < 0) {
+                    this.directionY = -this.directionY;
+                }
+
+                // Check collision detection - mouse position / particle position
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance < mouse.radius + this.size) {
+                    if (mouse.x < this.x && this.x < canvas.width - this.size * 10) {
+                        this.x += 10;
+                    }
+                    if (mouse.x > this.x && this.x > this.size * 10) {
+                        this.x -= 10;
+                    }
+                    if (mouse.y < this.y && this.y < canvas.height - this.size * 10) {
+                        this.y += 10;
+                    }
+                    if (mouse.y > this.y && this.y > this.size * 10) {
+                        this.y -= 10;
+                    }
+                }
+                
+                // Move particle
+                this.x += this.directionX;
+                this.y += this.directionY;
+                // Draw particle
+                this.draw();
+            }
+        }
+
+        // Create particle array
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 3) + 1; // Random size for depth effect
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 2) - 1; // velocity
+                let directionY = (Math.random() * 2) - 1;
+                let color = '#00f2ff';
+
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+            }
+        }
+
+        // Check if particles are close enough to draw line
+        function connect() {
+            let opacityValue = 1;
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x))
+                    + ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    
+                    if (distance < (canvas.width/7) * (canvas.height/7)) {
+                        opacityValue = 1 - (distance/20000);
+                        ctx.strokeStyle = 'rgba(0, 242, 255,' + opacityValue + ')'; // Cyan lines
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+        }
+
+        // Resize event
+        window.addEventListener('resize', function() {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            mouse.radius = ((canvas.height/80) * (canvas.height/80));
+            init();
+        });
+
+        // Mouse out event
+        window.addEventListener('mouseout', function() {
+            mouse.x = undefined;
+            mouse.y = undefined;
+        });
+
+        init();
+        animate();
+
+
+        // --- TILT EFFECT FOR PROFILE ---
+        const tiltBox = document.getElementById('tilt-box');
+        document.addEventListener('mousemove', (e) => {
+            if(tiltBox) {
+                const x = (window.innerWidth / 2 - e.pageX) / 25;
+                const y = (window.innerHeight / 2 - e.pageY) / 25;
+                tiltBox.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+            }
+        });
+
+        // --- SCROLL ANIMATION ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                }
+            });
+        });
+        const hiddenElements = document.querySelectorAll('.hidden');
+        hiddenElements.forEach((el) => observer.observe(el));
+    </script>
+</body>
+</html>
